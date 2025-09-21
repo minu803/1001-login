@@ -1,0 +1,284 @@
+// STEP-BY-STEP IMPLEMENTATION GUIDE
+// Start with these changes to your existing lib/auth.ts
+
+import { NextAuthOptions } from "next-auth"
+import EmailProvider from "next-auth/providers/email"
+import GoogleProvider from "next-auth/providers/google"
+import CredentialsProvider from "next-auth/providers/credentials"
+import { executeWithRLSBypass } from "@/lib/prisma"
+import { UserRole } from "@prisma/client"
+import { isDemoEmail, getOrCreateDemoUser, isEmailServiceConfigured } from "@/lib/auth-demo"
+import { createRLSBypassAdapter } from "@/lib/auth-adapter"
+import bcrypt from "bcryptjs"
+
+// IMPROVEMENT 1: Add enhanced session configuration
+export const authOptions: NextAuthOptions = {
+  adapter: createRLSBypassAdapter(),
+  
+  // CHANGE: Switch to database sessions for better security
+  session: {
+    strategy: "database", // Changed from "jwt"
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 2 * 60 * 60, // Refresh every 2 hours
+  },
+  
+  providers: [
+    // Your existing providers stay the same...
+    CredentialsProvider({
+      id: "credentials",
+      name: "ID & Password",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
+        
+        try {
+          const { prisma } = await import("@/lib/prisma");
+          
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email.toLowerCase() }
+          });
+          
+          const dummyHash = '$2b$12$dummyhashtopreventtimingatks.abcdefghijklmnopqrstuvwxy';
+          const userWithPassword = user as any;
+          const userHash = userWithPassword?.password || dummyHash;
+          const isValidPassword = await verifyPassword(credentials.password, userHash);
+          
+          if (!user || !userWithPassword.password || !isValidPassword) {
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+            
+            // IMPROVEMENT: Enhanced security logging
+            await logSecurityEvent({
+              action: 'LOGIN_FAILED',
+              resource: 'credentials_auth',
+              result: 'FAILURE',
+              ipAddress: 'unknown', // Will be populated by middleware
+              userAgent: 'unknown',
+              metadata: { email: credentials.email, reason: 'invalid_credentials' }
+            });
+            
+            return null;
+          }
+          
+          if (user.role !== UserRole.ADMIN && user.role !== UserRole.VOLUNTEER) {
+            await logSecurityEvent({
+              userId: user.id,
+              action: 'LOGIN_DENIED',
+              resource: 'credentials_auth',
+              result: 'FAILURE',
+              ipAddress: 'unknown',
+              userAgent: 'unknown',
+              metadata: { email: user.email, reason: 'insufficient_role' }
+            });
+            return null;
+          }
+          
+          // IMPROVEMENT: Log successful authentication
+          await logSecurityEvent({
+            userId: user.id,
+            action: 'LOGIN_SUCCESS',
+            resource: 'credentials_auth',
+            result: 'SUCCESS',
+            ipAddress: 'unknown',
+            userAgent: 'unknown',
+            metadata: { email: user.email, role: user.role }
+          });
+          
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            emailVerified: user.emailVerified,
+          };
+        } catch (error) {
+          console.error("Credentials authentication error:", error);
+          return null;
+        }
+      }
+    }),
+    
+    // ... other providers (keeping existing code)
+  ],
+  
+  pages: {
+    signIn: "/login",
+    signOut: "/",
+    error: "/auth/error",
+    verifyRequest: "/verify-email",
+    newUser: "/welcome"
+  },
+  
+  callbacks: {
+    async signIn({ user, account, email }) {
+      try {
+        // IMPROVEMENT: Enhanced signIn logging and validation
+        console.log(`[AUTH] Sign-in attempt: ${user.email}, provider: ${account?.provider}`)
+        
+        // For demo accounts, create/update user if needed
+        if (account?.provider === 'demo' || (email && typeof email === 'string' && isDemoEmail(email))) {
+          const demoUser = await getOrCreateDemoUser(user.email!);
+          if (demoUser) {
+            user.id = demoUser.id;
+            (user as any).role = demoUser.role;
+          }
+        }
+        
+        return true
+      } catch (error) {
+        console.error('[AUTH] Sign-in error:', error);
+        return false;
+      }
+    },
+    
+    async session({ session, user }) {
+      // IMPROVEMENT: Enhanced session data with security context
+      if (session?.user && user) {
+        session.user.id = user.id
+        session.user.role = (user as any).role || UserRole.LEARNER
+        session.user.emailVerified = (user as any).emailVerified
+        
+        // Add session metadata for security monitoring
+        ;(session as any).lastActivity = new Date().toISOString()
+        ;(session as any).sessionId = (user as any).sessionId || 'unknown'
+      }
+      return session
+    },
+    
+    // JWT callback is now less important with database sessions
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+        token.role = (user as any).role || UserRole.LEARNER
+        token.emailVerified = (user as any).emailVerified
+      }
+      return token
+    },
+    
+    async redirect({ url, baseUrl }) {
+      // Keep existing redirect logic
+      const publicRoutes = ['/library', '/shop', '/about', '/contact', '/mission', '/partners', '/programs', '/team', '/terms', '/privacy', '/donate'];
+      
+      const isPublicRoute = publicRoutes.some(route => 
+        url === route || url.startsWith(`${route}/`)
+      );
+      
+      if (isPublicRoute) {
+        return url.startsWith("/") ? `${baseUrl}${url}` : url;
+      }
+      
+      if (url === "/login" || url === "/signup") {
+        return "/dashboard"
+      }
+      
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
+    }
+  },
+  
+  events: {
+    async createUser({ user }) {
+      // IMPROVEMENT: Enhanced user creation with audit trail
+      await executeWithRLSBypass(async (client) => {
+        await client.profile.create({
+          data: {
+            userId: user.id,
+            language: "en",
+          }
+        })
+        
+        await client.subscription.create({
+          data: {
+            userId: user.id,
+            plan: "FREE",
+            status: "ACTIVE",
+          }
+        })
+      })
+      
+      // Log user creation
+      await logSecurityEvent({
+        userId: user.id,
+        action: 'USER_CREATED',
+        resource: 'user_management',
+        result: 'SUCCESS',
+        ipAddress: 'system',
+        userAgent: 'system',
+        metadata: { email: user.email }
+      });
+    },
+    
+    async signIn({ user, account }) {
+      // IMPROVEMENT: Enhanced sign-in event logging
+      await logSecurityEvent({
+        userId: user.id,
+        action: 'SIGN_IN',
+        resource: 'authentication',
+        result: 'SUCCESS',
+        ipAddress: 'unknown', // Will be populated by middleware
+        userAgent: 'unknown',
+        metadata: { 
+          email: user.email,
+          provider: account?.provider || 'unknown'
+        }
+      });
+    },
+    
+    // NEW: Add signOut event
+    async signOut({ session }) {
+      if (session?.user?.id) {
+        await logSecurityEvent({
+          userId: session.user.id,
+          action: 'SIGN_OUT',
+          resource: 'authentication',
+          result: 'SUCCESS',
+          ipAddress: 'unknown',
+          userAgent: 'unknown',
+          metadata: { email: session.user.email }
+        });
+      }
+    }
+  },
+  
+  debug: process.env.NODE_ENV === "development",
+}
+
+// IMPROVEMENT: Security event logging helper
+async function logSecurityEvent(event: {
+  userId?: string
+  action: string
+  resource: string
+  result: 'SUCCESS' | 'FAILURE' | 'WARNING'
+  ipAddress: string
+  userAgent: string
+  metadata?: Record<string, any>
+}): Promise<void> {
+  try {
+    // This would use your new audit service
+    const auditService = (await import('@/lib/auth-services')).AuditService.getInstance()
+    await auditService.logSecurityEvent(event)
+  } catch (error) {
+    console.error('[AUDIT] Failed to log security event:', error)
+  }
+}
+
+// Keep your existing type augmentation
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+      email: string
+      name?: string | null
+      image?: string | null
+      role: UserRole
+      emailVerified: Date | null
+    }
+  }
+  
+  interface User {
+    role: UserRole
+  }
+}
