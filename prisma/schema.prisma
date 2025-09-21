@@ -1,0 +1,2852 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["multiSchema", "postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = [pgcrypto]
+}
+
+// ==========================================
+// CORE MODELS
+// ==========================================
+
+// User model - Core authentication
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  emailVerified   DateTime?
+  name            String?
+  image           String?
+  password        String?          // For admin/volunteer password login
+  role            UserRole         @default(LEARNER)
+  schoolId        String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  // GDPR Deletion fields
+  deletedAt       DateTime?
+  deletionRequestId String?
+  
+  // Relations
+  accounts        Account[]
+  sessions        Session[]
+  profile         Profile?
+  subscription    Subscription?
+  school          School?          @relation(fields: [schoolId], references: [id])
+  deletionRequest UserDeletionRequest?
+  
+  // E-commerce
+  cart            Cart?
+  orders          Order[]
+  reviews         Review[]
+  
+  // Educational
+  enrollments     ClassEnrollment[]
+  submissions     Submission[]
+  lessonProgress  LessonProgress[]
+  teachingClasses Class[]          @relation("TeacherClasses")
+  
+  // Content
+  stories         Story[]
+  storySubmissions StorySubmission[]
+  translations    Translation[]
+  illustrations   Illustration[]
+  
+  // Reading
+  readingProgress ReadingProgress[]
+  bookmarks       Bookmark[]
+  readingLists    ReadingList[]
+  
+  // Volunteer
+  volunteerProfile VolunteerProfile?
+  volunteerApplications VolunteerApplication[]
+  volunteerHours  VolunteerHours[]
+  volunteerCertificates VolunteerCertificate[]
+  coordinatingProjects VolunteerProject[]
+  createdQuests Quest[]
+  reviewedEvidence VolunteerEvidence[]
+  issuedPoints VolunteerPoints[]
+  fulfilledRewards VolunteerRedemption[]
+  questReviews QuestReview[]
+  
+  // Donations
+  donations       Donation[]
+  recurringDonations RecurringDonation[]
+  
+  // System
+  notifications   Notification[]
+  activityLogs    ActivityLog[]
+  
+  // CMS Admin
+  uploadedMedia   MediaFile[]
+  workflowActions WorkflowHistory[]
+  bulkImports     BulkImport[]
+  
+  // Onboarding
+  onboardingProgress OnboardingProgress?
+  sampleContentAccess SampleContentAccess[]
+  
+  // Enhanced 1001 Stories relations
+  entitlements    Entitlement[]
+  volunteerSubmissions VolunteerSubmission[] @relation("VolunteerSubmissions")
+  reviewedVolunteerSubmissions VolunteerSubmission[] @relation("ReviewedVolunteerSubmissions")
+  assignedVolunteerSubmissions VolunteerSubmission[] @relation("AssignedVolunteerSubmissions")
+  publishedContent Publication[] @relation("PublishedContent")
+  
+  @@index([email])
+  @@index([role])
+  @@index([schoolId])
+  @@map("users")
+}
+
+// User roles
+enum UserRole {
+  LEARNER
+  TEACHER
+  INSTITUTION
+  VOLUNTEER
+  ADMIN
+}
+
+// User profile with extended information
+model Profile {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  firstName       String?
+  lastName        String?
+  organization    String?
+  bio             String?          @db.Text
+  location        String?
+  phone           String?
+  dateOfBirth     DateTime?
+  language        String           @default("en")
+  timezone        String           @default("UTC")
+  
+  // COPPA Compliance Fields
+  isMinor         Boolean          @default(false)
+  ageVerificationStatus AgeVerificationStatus @default(PENDING)
+  parentalConsentRequired Boolean  @default(false)
+  parentalConsentStatus ParentalConsentStatus @default(NOT_REQUIRED)
+  parentalConsentDate DateTime?
+  parentEmail     String?
+  parentName      String?
+  coppaCompliant  Boolean          @default(false)
+  
+  // For teachers/institutions
+  teachingLevel   String?
+  subjects        String[]
+  studentCount    Int?
+  
+  // For volunteers
+  skills          String[]
+  availability    String?
+  experience      String?          @db.Text
+  
+  // Preferences
+  emailNotifications Boolean       @default(true)
+  pushNotifications Boolean        @default(true)
+  newsletter      Boolean          @default(true)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("profiles")
+}
+
+// ==========================================
+// AUTHENTICATION MODELS (NextAuth)
+// ==========================================
+
+// NextAuth Account model (for OAuth providers)
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// NextAuth Session model
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+// NextAuth Verification Token model (for email verification)
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ==========================================
+// SUBSCRIPTION & PREMIUM FEATURES
+// ==========================================
+
+// Subscription model for premium features
+model Subscription {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  plan            SubscriptionPlan @default(FREE)
+  status          SubscriptionStatus @default(ACTIVE)
+  
+  // Subscription details
+  startDate       DateTime         @default(now())
+  endDate         DateTime?
+  cancelledAt     DateTime?
+  
+  // Payment information
+  stripeCustomerId     String?     @unique
+  stripeSubscriptionId String?     @unique
+  stripePriceId        String?
+  
+  // Features
+  maxStudents          Int         @default(30)
+  maxDownloads         Int         @default(10)
+  canAccessPremium     Boolean     @default(false)
+  canDownloadPDF       Boolean     @default(false)
+  canCreateClasses     Boolean     @default(false)
+  unlimitedReading     Boolean     @default(false)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entitlements    Entitlement[]
+  
+  @@map("subscriptions")
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+  TRIALING
+}
+
+// ==========================================
+// E-COMMERCE MODELS
+// ==========================================
+
+// Product categories
+model Category {
+  id              String           @id @default(cuid())
+  name            String
+  slug            String           @unique
+  description     String?
+  parentId        String?
+  image           String?
+  order           Int              @default(0)
+  isActive        Boolean          @default(true)
+  
+  parent          Category?        @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children        Category[]       @relation("CategoryHierarchy")
+  products        Product[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@map("categories")
+}
+
+// Physical and digital products for sale
+model Product {
+  id              String           @id @default(cuid())
+  sku             String           @unique
+  type            ProductType
+  title           String
+  description     String           @db.Text
+  price           Decimal          @db.Decimal(10, 2)
+  compareAtPrice  Decimal?         @db.Decimal(10, 2)
+  cost            Decimal?         @db.Decimal(10, 2)
+  currency        String           @default("USD")
+  weight          Float?
+  status          ProductStatus    @default(DRAFT)
+  featured        Boolean          @default(false)
+  
+  // Creator information
+  creatorId       String?
+  creatorName     String?
+  creatorAge      Int?
+  creatorLocation String?
+  creatorStory    String?          @db.Text
+  
+  // Categorization
+  categoryId      String
+  tags            String[]
+  
+  // Impact metrics
+  impactMetric    String?
+  impactValue     String?
+  
+  // Digital product fields
+  digitalFileUrl  String?
+  downloadLimit   Int?
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  // Relations
+  category        Category         @relation(fields: [categoryId], references: [id])
+  variants        ProductVariant[]
+  images          ProductImage[]
+  inventory       Inventory[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  reviews         Review[]         @relation("ProductReviews")
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([status])
+  @@index([type])
+  @@index([featured])
+  @@map("products")
+}
+
+enum ProductType {
+  PHYSICAL_BOOK
+  DIGITAL_BOOK
+  MERCHANDISE
+  ARTWORK
+  DONATION_ITEM
+}
+
+enum ProductStatus {
+  ACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+// Product variations (size, color, format)
+model ProductVariant {
+  id              String           @id @default(cuid())
+  productId       String
+  title           String
+  sku             String           @unique
+  price           Decimal          @db.Decimal(10, 2)
+  compareAtPrice  Decimal?         @db.Decimal(10, 2)
+  inventoryQuantity Int            @default(0)
+  weight          Float?
+  attributes      Json
+  position        Int              @default(0)
+  
+  product         Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inventory       Inventory[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@map("product_variants")
+}
+
+// Product images
+model ProductImage {
+  id              String           @id @default(cuid())
+  productId       String
+  url             String
+  alt             String?
+  position        Int              @default(0)
+  
+  product         Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  
+  @@map("product_images")
+}
+
+// Stock management for products
+model Inventory {
+  id              String           @id @default(cuid())
+  productId       String
+  variantId       String?
+  quantity        Int              @default(0)
+  reserved        Int              @default(0)
+  location        String           @default("main")
+  reorderPoint    Int              @default(10)
+  reorderQuantity Int              @default(50)
+  
+  product         Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant         ProductVariant?  @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([productId, variantId, location])
+  @@map("inventory")
+}
+
+// User shopping cart
+model Cart {
+  id              String           @id @default(cuid())
+  userId          String?          @unique
+  sessionId       String?
+  items           CartItem[]
+  expiresAt       DateTime         @default(dbgenerated("NOW() + INTERVAL '7 days'"))
+  
+  user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([sessionId])
+  @@map("carts")
+}
+
+// Individual items in cart
+model CartItem {
+  id              String           @id @default(cuid())
+  cartId          String
+  productId       String
+  variantId       String?
+  quantity        Int              @default(1)
+  price           Decimal          @db.Decimal(10, 2)
+  
+  cart            Cart             @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product         Product          @relation(fields: [productId], references: [id])
+  variant         ProductVariant?  @relation(fields: [variantId], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([cartId, productId, variantId])
+  @@map("cart_items")
+}
+
+// Completed purchases
+model Order {
+  id              String           @id @default(cuid())
+  orderNumber     String           @unique @default(cuid())
+  userId          String?
+  email           String
+  phone           String?
+  
+  // Financial
+  subtotal        Decimal          @db.Decimal(10, 2)
+  tax             Decimal          @db.Decimal(10, 2) @default(0)
+  shipping        Decimal          @db.Decimal(10, 2) @default(0)
+  discount        Decimal          @db.Decimal(10, 2) @default(0)
+  total           Decimal          @db.Decimal(10, 2)
+  currency        String           @default("USD")
+  
+  // Status
+  status          OrderStatus      @default(PENDING)
+  paymentStatus   PaymentStatus    @default(PENDING)
+  fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
+  
+  // Payment
+  paymentMethod   String?
+  stripePaymentId String?
+  
+  // Shipping
+  shippingAddress Json?
+  billingAddress  Json?
+  shippingMethod  String?
+  trackingNumber  String?
+  
+  // Additional
+  notes           String?          @db.Text
+  tags            String[]
+  
+  // Relations
+  user            User?            @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+  entitlements    Entitlement[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([orderNumber])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  PARTIALLY_FULFILLED
+  FULFILLED
+  CANCELLED
+}
+
+// Products within an order
+model OrderItem {
+  id              String           @id @default(cuid())
+  orderId         String
+  productId       String
+  variantId       String?
+  title           String
+  variantTitle    String?
+  quantity        Int
+  price           Decimal          @db.Decimal(10, 2)
+  total           Decimal          @db.Decimal(10, 2)
+  fulfillmentStatus String?
+  
+  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product          @relation(fields: [productId], references: [id])
+  variant         ProductVariant?  @relation(fields: [variantId], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  
+  @@map("order_items")
+}
+
+// ==========================================
+// DIGITAL LIBRARY & READING
+// ==========================================
+
+// Enhanced story model for digital books
+model Story {
+  id              String           @id @default(cuid())
+  isbn            String?          @unique
+  title           String
+  subtitle        String?
+  content         String           @db.Text
+  summary         String?
+  
+  // Author information
+  authorId        String
+  authorName      String
+  coAuthors       String[]
+  authorAge       Int?
+  authorLocation  String?
+  illustratorId   String?
+  
+  // Publication details
+  publishedDate   DateTime?
+  publisher       String?
+  language        String           @default("en")
+  pageCount       Int?
+  readingLevel    String?
+  readingTime     Int?             // Estimated minutes
+  
+  // Categorization
+  category        String[]
+  genres          String[]
+  subjects        String[]
+  tags            String[]
+  
+  // Media
+  coverImage      String?
+  illustrations   String[]
+  samplePdf       String?
+  fullPdf         String?
+  epubFile        String?
+  audioFile       String?
+  
+  // Access control
+  isPremium       Boolean          @default(false)
+  isPublished     Boolean          @default(false)
+  featured        Boolean          @default(false)
+  price           Decimal?         @db.Decimal(10, 2)
+  
+  // Metrics
+  viewCount       Int              @default(0)
+  likeCount       Int              @default(0)
+  rating          Float?
+  
+  // Relations
+  author          User             @relation(fields: [authorId], references: [id])
+  chapters        Chapter[]
+  readingProgress ReadingProgress[]
+  bookmarks       Bookmark[]
+  reviews         Review[]         @relation("StoryReviews")
+  translations    Translation[]
+  sampleAccesses  SampleContentAccess[]
+  entitlements    Entitlement[]
+  publications    Publication[]
+  shopProducts    ShopProduct[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([isPublished])
+  @@index([isPremium])
+  @@index([language])
+  @@map("stories")
+}
+
+// Book chapters for sequential reading
+model Chapter {
+  id              String           @id @default(cuid())
+  storyId         String
+  chapterNumber   Int
+  title           String
+  content         String           @db.Text
+  audioUrl        String?
+  illustrations   String[]
+  readingTime     Int?             // Estimated minutes
+  
+  story           Story            @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([storyId, chapterNumber])
+  @@map("chapters")
+}
+
+// User's reading progress tracking
+model ReadingProgress {
+  id              String           @id @default(cuid())
+  userId          String
+  storyId         String
+  currentChapter  Int              @default(1)
+  currentPage     Int?
+  totalPages      Int?
+  currentPosition String?          // Text position for continue reading
+  percentComplete Float            @default(0)
+  totalReadingTime Int             @default(0) // Minutes
+  lastReadAt      DateTime         @default(now())
+  startedAt       DateTime         @default(now())
+  completedAt     DateTime?
+  isCompleted     Boolean          @default(false)
+  notes           String[]
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story           Story            @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, storyId])
+  @@index([userId])
+  @@index([lastReadAt])
+  @@map("reading_progress")
+}
+
+// Saved positions in books
+model Bookmark {
+  id              String           @id @default(cuid())
+  userId          String
+  storyId         String
+  chapterId       Int?
+  position        String?          // Text position
+  note            String?
+  color           String?          // Highlight color
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story           Story            @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([userId, storyId], name: "userId_storyId")
+  @@index([userId])
+  @@map("bookmarks")
+}
+
+// User's reading lists/collections
+model ReadingList {
+  id              String           @id @default(cuid())
+  userId          String
+  name            String
+  description     String?
+  isPublic        Boolean          @default(false)
+  storyIds        String[]
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([userId])
+  @@map("reading_lists")
+}
+
+// ==========================================
+// EDUCATIONAL SYSTEM
+// ==========================================
+
+// Educational classes/courses
+model Class {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  name            String
+  description     String?          @db.Text
+  teacherId       String
+  schoolId        String?
+  subject         String
+  gradeLevel      String
+  schedule        Json             // Class schedule
+  startDate       DateTime
+  endDate         DateTime
+  maxStudents     Int              @default(30)
+  isActive        Boolean          @default(true)
+  settings        Json             // Class settings
+  
+  teacher         User             @relation("TeacherClasses", fields: [teacherId], references: [id])
+  school          School?          @relation(fields: [schoolId], references: [id])
+  enrollments     ClassEnrollment[]
+  assignments     Assignment[]
+  lessons         Lesson[]
+  resources       ClassResource[]
+  announcements   ClassAnnouncement[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([teacherId])
+  @@index([schoolId])
+  @@map("classes")
+}
+
+// Student-class relationships
+model ClassEnrollment {
+  id              String           @id @default(cuid())
+  classId         String
+  studentId       String
+  enrolledAt      DateTime         @default(now())
+  status          EnrollmentStatus @default(ACTIVE)
+  grade           String?
+  attendance      Float            @default(100)
+  progress        Float            @default(0)
+  
+  class           Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student         User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@unique([classId, studentId])
+  @@index([studentId])
+  @@index([classId])
+  @@map("class_enrollments")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+  SUSPENDED
+}
+
+// Class assignments and homework
+model Assignment {
+  id              String           @id @default(cuid())
+  classId         String
+  title           String
+  description     String           @db.Text
+  type            AssignmentType
+  dueDate         DateTime
+  points          Int              @default(100)
+  resources       String[]
+  requirements    Json
+  
+  class           Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  submissions     Submission[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([classId])
+  @@index([dueDate])
+  @@map("assignments")
+}
+
+enum AssignmentType {
+  READING
+  WRITING
+  PROJECT
+  QUIZ
+  PRESENTATION
+  GROUP_WORK
+}
+
+// Student assignment submissions
+model Submission {
+  id              String           @id @default(cuid())
+  assignmentId    String
+  studentId       String
+  submittedAt     DateTime         @default(now())
+  content         String?          @db.Text
+  attachments     String[]
+  grade           Float?
+  feedback        String?          @db.Text
+  status          SubmissionStatus @default(DRAFT)
+  
+  assignment      Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student         User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@unique([assignmentId, studentId])
+  @@index([studentId])
+  @@map("submissions")
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  GRADED
+  RETURNED
+  LATE
+}
+
+// Course lessons/modules
+model Lesson {
+  id              String           @id @default(cuid())
+  classId         String
+  lessonNumber    Int
+  title           String
+  objectives      String[]
+  content         String           @db.Text
+  resources       Json             // Lesson materials
+  duration        Int              // Estimated minutes
+  
+  class           Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  progress        LessonProgress[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([classId, lessonNumber])
+  @@map("lessons")
+}
+
+// Student lesson completion
+model LessonProgress {
+  id              String           @id @default(cuid())
+  lessonId        String
+  studentId       String
+  startedAt       DateTime         @default(now())
+  completedAt     DateTime?
+  timeSpent       Int              @default(0) // Minutes
+  score           Float?
+  
+  lesson          Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  student         User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@unique([lessonId, studentId])
+  @@index([studentId])
+  @@map("lesson_progress")
+}
+
+// Class resources (materials, documents)
+model ClassResource {
+  id              String           @id @default(cuid())
+  classId         String
+  title           String
+  description     String?
+  type            ResourceType
+  url             String
+  size            Int?             // File size in bytes
+  
+  class           Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  
+  @@map("class_resources")
+}
+
+enum ResourceType {
+  DOCUMENT
+  VIDEO
+  AUDIO
+  IMAGE
+  LINK
+  PRESENTATION
+}
+
+// Class announcements
+model ClassAnnouncement {
+  id              String           @id @default(cuid())
+  classId         String
+  title           String
+  content         String           @db.Text
+  priority        AnnouncementPriority @default(NORMAL)
+  
+  class           Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  
+  @@map("class_announcements")
+}
+
+enum AnnouncementPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// ==========================================
+// SCHOOL MANAGEMENT
+// ==========================================
+
+// Educational institutions
+model School {
+  id              String           @id @default(cuid())
+  name            String
+  type            SchoolType
+  address         Json
+  country         String
+  phone           String?
+  email           String?
+  website         String?
+  principalName   String?
+  studentCount    Int              @default(0)
+  teacherCount    Int              @default(0)
+  establishedYear Int?
+  accreditation   String[]
+  partneredAt     DateTime         @default(now())
+  status          SchoolStatus     @default(PENDING)
+  
+  // Relations
+  users           User[]
+  classes         Class[]
+  budgets         Budget[]
+  resources       SchoolResource[]
+  volunteerAssignments SchoolVolunteer[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@map("schools")
+}
+
+enum SchoolType {
+  PRIMARY
+  SECONDARY
+  HIGH_SCHOOL
+  UNIVERSITY
+  VOCATIONAL
+  SPECIAL_EDUCATION
+}
+
+enum SchoolStatus {
+  ACTIVE
+  PENDING
+  INACTIVE
+  SUSPENDED
+}
+
+// School financial management
+model Budget {
+  id              String           @id @default(cuid())
+  schoolId        String
+  year            Int
+  totalBudget     Decimal          @db.Decimal(12, 2)
+  allocatedBudget Decimal          @db.Decimal(12, 2) @default(0)
+  spentBudget     Decimal          @db.Decimal(12, 2) @default(0)
+  categories      Json
+  
+  school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  items           BudgetItem[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([schoolId, year])
+  @@map("budgets")
+}
+
+// Budget line items
+model BudgetItem {
+  id              String           @id @default(cuid())
+  budgetId        String
+  category        String
+  description     String
+  amount          Decimal          @db.Decimal(10, 2)
+  spent           Decimal          @db.Decimal(10, 2) @default(0)
+  vendor          String?
+  approvedBy      String?
+  approvedAt      DateTime?
+  
+  budget          Budget           @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  
+  @@map("budget_items")
+}
+
+// School educational resources
+model SchoolResource {
+  id              String           @id @default(cuid())
+  schoolId        String
+  type            SchoolResourceType
+  name            String
+  quantity        Int              @default(1)
+  condition       String?
+  location        String?
+  purchaseDate    DateTime?
+  value           Decimal?         @db.Decimal(10, 2)
+  
+  school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@map("school_resources")
+}
+
+enum SchoolResourceType {
+  BOOK
+  COMPUTER
+  TABLET
+  SUPPLIES
+  EQUIPMENT
+  FURNITURE
+  SOFTWARE
+}
+
+// School-volunteer assignments
+model SchoolVolunteer {
+  id              String           @id @default(cuid())
+  schoolId        String
+  volunteerId     String
+  role            String
+  startDate       DateTime
+  endDate         DateTime?
+  isActive        Boolean          @default(true)
+  
+  school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  
+  @@unique([schoolId, volunteerId])
+  @@map("school_volunteers")
+}
+
+// ==========================================
+// VOLUNTEER MANAGEMENT
+// ==========================================
+
+// Volunteer opportunities and projects
+model VolunteerProject {
+  id              String           @id @default(cuid())
+  title           String
+  description     String           @db.Text
+  type            VolunteerType
+  skills          String[]
+  location        String           // Remote or physical location
+  timeCommitment  String           // Hours per week
+  startDate       DateTime
+  endDate         DateTime?
+  maxVolunteers   Int
+  currentVolunteers Int            @default(0)
+  status          ProjectStatus    @default(OPEN)
+  impact          String           // Expected impact
+  coordinatorId   String
+  
+  coordinator     User             @relation(fields: [coordinatorId], references: [id])
+  applications    VolunteerApplication[]
+  hours           VolunteerHours[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([status])
+  @@map("volunteer_projects")
+}
+
+enum VolunteerType {
+  TRANSLATION
+  ILLUSTRATION
+  TEACHING
+  CONTENT_CREATION
+  TECHNICAL
+  ADMINISTRATIVE
+  FUNDRAISING
+  OTHER
+}
+
+enum ProjectStatus {
+  DRAFT
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// Volunteer applications for projects (Enhanced)
+model VolunteerApplication {
+  id              String           @id @default(cuid())
+  projectId       String?          // Old projects
+  questId         String?          // New quest system
+  volunteerId     String
+  volunteerUserId String           // Link to User for backward compatibility
+  
+  // Application content
+  motivation      String           @db.Text
+  experience      String           @db.Text
+  availability    String
+  coverLetter     String?          @db.Text
+  
+  // Status and review
+  status          ApplicationStatus @default(PENDING)
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  notes           String?          @db.Text
+  rejectionReason String?          @db.Text
+  
+  // Matching and selection
+  matchScore      Float?           // Auto-calculated match score
+  isRecommended   Boolean          @default(false)
+  selectionReason String?          @db.Text
+  
+  // Relations
+  project         VolunteerProject? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  quest           Quest?           @relation(fields: [questId], references: [id], onDelete: Cascade)
+  volunteer       User             @relation(fields: [volunteerUserId], references: [id], onDelete: Cascade)
+  volunteerProfile VolunteerProfile @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([projectId, volunteerId])
+  @@unique([questId, volunteerId])
+  @@map("volunteer_applications")
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+// Volunteer time tracking
+model VolunteerHours {
+  id              String           @id @default(cuid())
+  volunteerId     String
+  projectId       String
+  date            DateTime
+  hours           Float
+  activity        String           @db.Text
+  impact          String?
+  verified        Boolean          @default(false)
+  verifiedBy      String?
+  verifiedAt      DateTime?
+  
+  volunteer       User             @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  project         VolunteerProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  
+  @@index([volunteerId])
+  @@index([projectId])
+  @@map("volunteer_hours")
+}
+
+// Volunteer recognition certificates
+model VolunteerCertificate {
+  id              String           @id @default(cuid())
+  volunteerId     String
+  type            CertificateType
+  title           String
+  description     String           @db.Text
+  hoursContributed Float
+  projectCount    Int
+  issuedDate      DateTime         @default(now())
+  certificateUrl  String?
+  
+  volunteer       User             @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  
+  @@map("volunteer_certificates")
+}
+
+enum CertificateType {
+  PARTICIPATION
+  ACHIEVEMENT
+  MILESTONE
+  EXCELLENCE
+  LEADERSHIP
+}
+
+// ==========================================
+// DONATION SYSTEM
+// ==========================================
+
+// Individual donations
+model Donation {
+  id              String           @id @default(cuid())
+  donorId         String?
+  campaignId      String?
+  amount          Decimal          @db.Decimal(10, 2)
+  currency        String           @default("USD")
+  type            DonationType     @default(ONE_TIME)
+  paymentMethod   String?
+  stripePaymentId String?
+  anonymous       Boolean          @default(false)
+  donorName       String?
+  donorEmail      String
+  message         String?          @db.Text
+  taxDeductible   Boolean          @default(true)
+  receiptUrl      String?
+  status          DonationStatus   @default(PENDING)
+  
+  donor           User?            @relation(fields: [donorId], references: [id])
+  campaign        DonationCampaign? @relation(fields: [campaignId], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  
+  @@index([donorId])
+  @@index([campaignId])
+  @@index([status])
+  @@map("donations")
+}
+
+enum DonationType {
+  ONE_TIME
+  RECURRING
+  PLEDGE
+}
+
+enum DonationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+// Fundraising campaigns
+model DonationCampaign {
+  id              String           @id @default(cuid())
+  title           String
+  description     String           @db.Text
+  goal            Decimal          @db.Decimal(10, 2)
+  raised          Decimal          @db.Decimal(10, 2) @default(0)
+  currency        String           @default("USD")
+  startDate       DateTime
+  endDate         DateTime
+  category        String
+  beneficiary     String           // Who benefits
+  impactStatement String           @db.Text
+  images          String[]
+  videoUrl        String?
+  status          CampaignStatus   @default(DRAFT)
+  featured        Boolean          @default(false)
+  
+  donations       Donation[]
+  updates         CampaignUpdate[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([status])
+  @@index([featured])
+  @@map("donation_campaigns")
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  PAUSED
+}
+
+// Campaign progress updates
+model CampaignUpdate {
+  id              String           @id @default(cuid())
+  campaignId      String
+  title           String
+  content         String           @db.Text
+  images          String[]
+  
+  campaign        DonationCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  
+  @@map("campaign_updates")
+}
+
+// Subscription donations
+model RecurringDonation {
+  id              String           @id @default(cuid())
+  donorId         String
+  amount          Decimal          @db.Decimal(10, 2)
+  currency        String           @default("USD")
+  frequency       DonationFrequency @default(MONTHLY)
+  dayOfMonth      Int?             // For monthly donations
+  stripeSubscriptionId String?     @unique
+  status          RecurringStatus  @default(ACTIVE)
+  startDate       DateTime         @default(now())
+  pausedAt        DateTime?
+  cancelledAt     DateTime?
+  totalContributed Decimal         @db.Decimal(10, 2) @default(0)
+  lastPaymentDate DateTime?
+  nextPaymentDate DateTime?
+  
+  donor           User             @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([donorId])
+  @@index([status])
+  @@map("recurring_donations")
+}
+
+enum DonationFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUALLY
+}
+
+enum RecurringStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  FAILED
+}
+
+// ==========================================
+// CONTENT MANAGEMENT
+// ==========================================
+
+// User story submissions
+model StorySubmission {
+  id              String           @id @default(cuid())
+  authorId        String
+  title           String
+  content         String           @db.Text
+  summary         String?          @db.Text
+  language        String
+  category        String
+  ageGroup        String
+  status          StorySubmissionStatus @default(DRAFT)
+  priority        Priority         @default(MEDIUM)
+  reviewerId      String?
+  assigneeId      String?
+  dueDate         DateTime?
+  reviewNotes     String?          @db.Text
+  editorialNotes  String?          @db.Text
+  publishDate     DateTime?
+  compensation    Decimal?         @db.Decimal(10, 2)
+  tags            String[]
+  
+  // Media files
+  coverImageId    String?
+  attachments     String[]
+  
+  author          User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  coverImage      MediaFile?       @relation(fields: [coverImageId], references: [id])
+  workflowHistory WorkflowHistory[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([status])
+  @@index([priority])
+  @@index([assigneeId])
+  @@map("story_submissions")
+}
+
+enum StorySubmissionStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  APPROVED
+  PUBLISHED
+  REJECTED
+}
+
+// Story translations
+model Translation {
+  id              String           @id @default(cuid())
+  storyId         String
+  translatorId    String
+  fromLanguage    String
+  toLanguage      String
+  title           String
+  content         String           @db.Text
+  status          TranslationStatus @default(IN_PROGRESS)
+  qualityScore    Float?
+  reviewerId      String?
+  reviewNotes     String?          @db.Text
+  
+  story           Story            @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  translator      User             @relation(fields: [translatorId], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([storyId, toLanguage])
+  @@index([status])
+  @@map("translations")
+}
+
+enum TranslationStatus {
+  IN_PROGRESS
+  REVIEW
+  APPROVED
+  PUBLISHED
+  REJECTED
+}
+
+// Story illustrations
+model Illustration {
+  id              String           @id @default(cuid())
+  storyId         String
+  artistId        String
+  title           String
+  description     String?
+  fileUrl         String
+  thumbnailUrl    String?
+  position        Int?
+  status          IllustrationStatus @default(DRAFT)
+  compensation    Decimal?         @db.Decimal(10, 2)
+  license         String
+  
+  artist          User             @relation(fields: [artistId], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@map("illustrations")
+}
+
+enum IllustrationStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  PUBLISHED
+  REJECTED
+}
+
+// Content reviews and ratings
+model Review {
+  id              String           @id @default(cuid())
+  userId          String
+  contentType     ContentType
+  contentId       String
+  rating          Int              // 1-5 stars
+  title           String?
+  comment         String?          @db.Text
+  helpful         Int              @default(0)
+  verified        Boolean          @default(false)
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product         Product?         @relation("ProductReviews", fields: [contentId], references: [id], onDelete: Cascade, map: "reviews_product_contentId_fkey")
+  story           Story?           @relation("StoryReviews", fields: [contentId], references: [id], onDelete: Cascade, map: "reviews_story_contentId_fkey")
+  book            Book?            @relation("BookReviews", fields: [contentId], references: [id], onDelete: Cascade, map: "reviews_book_contentId_fkey")
+  
+  createdAt       DateTime         @default(now())
+  
+  @@unique([userId, contentType, contentId], name: "unique_user_content_review")
+  @@index([userId])
+  @@index([contentType, contentId])
+  @@map("reviews")
+}
+
+enum ContentType {
+  BOOK
+  PRODUCT
+  STORY
+  COURSE
+}
+
+// ==========================================
+// SYSTEM MODELS
+// ==========================================
+
+// User notifications
+model Notification {
+  id              String           @id @default(cuid())
+  userId          String
+  type            NotificationType
+  title           String
+  message         String
+  data            Json?
+  read            Boolean          @default(false)
+  readAt          DateTime?
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  SYSTEM
+  ORDER
+  ASSIGNMENT
+  CLASS
+  DONATION
+  VOLUNTEER
+  ACHIEVEMENT
+}
+
+// Activity logging
+model ActivityLog {
+  id              String           @id @default(cuid())
+  userId          String
+  action          String
+  entity          String
+  entityId        String
+  metadata        Json?
+  ipAddress       String?
+  userAgent       String?
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  
+  @@index([userId])
+  @@index([entity, entityId])
+  @@map("activity_logs")
+}
+
+// ==========================================
+// CMS ADMIN MODELS
+// ==========================================
+
+// Priority levels for tasks and submissions
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// Media file library for CMS
+model MediaFile {
+  id              String           @id @default(cuid())
+  filename        String
+  originalName    String
+  mimeType        String
+  size            Int              // File size in bytes
+  url             String
+  thumbnailUrl    String?
+  altText         String?
+  description     String?
+  
+  // Image processing details
+  width           Int?
+  height          Int?
+  format          String?
+  
+  // Organization
+  folder          String           @default("/")
+  tags            String[]
+  
+  // Relationships
+  uploadedById    String
+  uploadedBy      User             @relation(fields: [uploadedById], references: [id])
+  storySubmissions StorySubmission[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([uploadedById])
+  @@index([mimeType])
+  @@index([folder])
+  @@map("media_files")
+}
+
+// Workflow history tracking for story submissions
+model WorkflowHistory {
+  id              String           @id @default(cuid())
+  storySubmissionId String
+  fromStatus      StorySubmissionStatus?
+  toStatus        StorySubmissionStatus
+  comment         String?          @db.Text
+  performedById   String
+  metadata        Json?
+  
+  storySubmission StorySubmission  @relation(fields: [storySubmissionId], references: [id], onDelete: Cascade)
+  performedBy     User             @relation(fields: [performedById], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  
+  @@index([storySubmissionId])
+  @@index([performedById])
+  @@map("workflow_history")
+}
+
+// Bulk import tracking for CSV/Excel uploads
+model BulkImport {
+  id              String           @id @default(cuid())
+  filename        String
+  originalName    String
+  fileUrl         String
+  type            ImportType
+  status          ImportStatus     @default(PENDING)
+  
+  // Processing details
+  totalRows       Int              @default(0)
+  processedRows   Int              @default(0)
+  successfulRows  Int              @default(0)
+  errorRows       Int              @default(0)
+  
+  // Results
+  errors          Json?            // Array of error details
+  summary         Json?            // Import summary
+  
+  // Relations
+  uploadedById    String
+  uploadedBy      User             @relation(fields: [uploadedById], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([uploadedById])
+  @@index([status])
+  @@map("bulk_imports")
+}
+
+enum ImportType {
+  STORIES
+  TRANSLATIONS
+  USERS
+  MEDIA
+}
+
+enum ImportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ==========================================
+// ONBOARDING ZONE MODELS
+// ==========================================
+
+// User onboarding progress tracking
+model OnboardingProgress {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  currentStep     OnboardingStep   @default(WELCOME)
+  completionRate  Float            @default(0)
+  samplesViewed   Int              @default(0)
+  tutorialCompleted Boolean        @default(false)
+  lastActivity    DateTime         @default(now())
+  isCompleted     Boolean          @default(false)
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activities      OnboardingActivity[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@map("onboarding_progress")
+}
+
+// Individual onboarding activities
+model OnboardingActivity {
+  id              String           @id @default(cuid())
+  progressId      String
+  activityType    ActivityType
+  contentId       String?
+  timeSpent       Int              @default(0) // Minutes
+  isCompleted     Boolean          @default(false)
+  interactionData Json?            // Clicks, scrolls, etc.
+  
+  progress        OnboardingProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  
+  @@map("onboarding_activities")
+}
+
+// Sample content access tracking
+model SampleContentAccess {
+  id              String           @id @default(cuid())
+  userId          String
+  storyId         String
+  viewCount       Int              @default(0)
+  totalTimeSpent  Int              @default(0) // Minutes
+  lastAccessed    DateTime         @default(now())
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story           Story            @relation(fields: [storyId], references: [id])
+  
+  @@unique([userId, storyId])
+  @@map("sample_content_access")
+}
+
+// Welcome messages and notifications
+model WelcomeMessage {
+  id              String           @id @default(cuid())
+  messageType     WelcomeType
+  language        String           @default("ko")
+  content         String           @db.Text
+  isActive        Boolean          @default(true)
+  priority        Int              @default(1)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@map("welcome_messages")
+}
+
+// Onboarding step enumeration
+enum OnboardingStep {
+  WELCOME
+  TUTORIAL
+  SAMPLE_STORIES
+  PREPARATION
+  COMMUNITY
+  COMPLETED
+}
+
+// Activity type enumeration
+enum ActivityType {
+  STORY_VIEW
+  TUTORIAL_STEP
+  COMMUNITY_POST
+  PREPARATION_TASK
+  BADGE_EARNED
+}
+
+// Welcome message type enumeration
+enum WelcomeType {
+  BRIEF
+  FRIENDLY
+  FORMAL
+  APPROVAL_PENDING
+  APPROVAL_APPROVED
+  APPROVAL_REJECTED
+  RESUBMISSION_REQUIRED
+}
+
+// ==========================================
+// VOLUNTEER MANAGEMENT SYSTEM (Enhanced)
+// ==========================================
+
+// Enhanced volunteer profile with comprehensive information
+model VolunteerProfile {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  
+  // Skills and qualifications
+  languages       String[]         // Spoken languages
+  languageLevels  Json             // {"en": "native", "es": "advanced"}
+  skills          String[]         // Technical and soft skills
+  qualifications  String[]         // Certifications, degrees
+  experience      String?          @db.Text
+  portfolio       String?          // Portfolio URL
+  
+  // Availability and preferences
+  timezone        String           @default("UTC")
+  availableSlots  Json             // Weekly availability slots
+  maxHoursPerWeek Int              @default(10)
+  remoteOnly      Boolean          @default(true)
+  preferredTypes  VolunteerType[]  // Preferred activity types
+  
+  // Verification and approval
+  verificationStatus VerificationStatus @default(PENDING)
+  backgroundCheck Boolean          @default(false)
+  documentUrl     String?          // ID or background check document
+  verifiedAt      DateTime?
+  verifiedById    String?
+  
+  // Performance tracking
+  totalHours      Float            @default(0)
+  totalPoints     Int              @default(0)
+  currentLevel    VolunteerLevel   @default(BRONZE)
+  rating          Float            @default(5.0)
+  reliability     Float            @default(100.0) // Percentage
+  
+  // Mentorship
+  isMentor        Boolean          @default(false)
+  mentorLevel     MentorLevel?
+  canAcceptMentees Boolean          @default(false)
+  maxMentees      Int              @default(0)
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relations for tracking
+  applications    VolunteerApplication[]
+  assignments     QuestAssignment[]
+  evidenceRecords VolunteerEvidence[]
+  pointHistory    VolunteerPoints[]
+  redemptions     VolunteerRedemption[]
+  mentorships     MentorRelation[]  @relation("MentorRelations")
+  mentorees       MentorRelation[]  @relation("MenteeRelations")
+  matchScores     VolunteerMatch[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@map("volunteer_profiles")
+}
+
+// Enhanced quest/class system for scheduling and matching
+model Quest {
+  id              String           @id @default(cuid())
+  title           String
+  description     String           @db.Text
+  type            VolunteerType
+  category        QuestCategory    @default(EDUCATION)
+  difficulty      DifficultyLevel  @default(BEGINNER)
+  
+  // Requirements
+  requiredSkills  String[]
+  requiredLanguages String[]       // Required languages
+  minimumLevel    VolunteerLevel   @default(BRONZE)
+  experienceRequired Boolean       @default(false)
+  
+  // Scheduling
+  startDate       DateTime
+  endDate         DateTime?
+  duration        Int              // Expected hours
+  isRecurring     Boolean          @default(false)
+  recurringPattern String?         // e.g., "weekly", "biweekly"
+  timezone        String           @default("UTC")
+  timeSlots       Json             // Available time slots
+  
+  // Capacity and urgency
+  maxVolunteers   Int              @default(1)
+  currentVolunteers Int            @default(0)
+  urgency         UrgencyLevel     @default(MEDIUM)
+  priority        Int              @default(1)
+  
+  // Rewards
+  pointsReward    Int              @default(10)
+  additionalRewards String[]       // Badges, certificates, etc.
+  
+  // Content and location
+  location        String           @default("Remote")
+  materials       String[]         // Required materials/resources
+  targetAudience  String?          // Who this quest helps
+  expectedImpact  String?          // Expected outcome
+  
+  // Creator and approval
+  creatorId       String
+  createdByRole   UserRole         @default(ADMIN)
+  approvalRequired Boolean         @default(false)
+  isApproved      Boolean          @default(true)
+  approvedById    String?
+  approvedAt      DateTime?
+  
+  // Status
+  status          QuestStatus      @default(OPEN)
+  isActive        Boolean          @default(true)
+  isFeatured      Boolean          @default(false)
+  
+  creator         User             @relation(fields: [creatorId], references: [id])
+  applications    VolunteerApplication[]
+  assignments     QuestAssignment[]
+  evidenceRecords VolunteerEvidence[]
+  reviews         QuestReview[]
+  matches         VolunteerMatch[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([status, type])
+  @@index([urgency, startDate])
+  @@map("quests")
+}
+
+// Assignment relationship between volunteers and quests
+model QuestAssignment {
+  id              String           @id @default(cuid())
+  questId         String
+  volunteerId     String
+  
+  // Assignment details
+  assignedAt      DateTime         @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  status          AssignmentStatus @default(ASSIGNED)
+  
+  // Performance tracking
+  hoursLogged     Float            @default(0)
+  progressPercent Int              @default(0)
+  qualityScore    Float?
+  
+  // Notes and feedback
+  volunteerNotes  String?          @db.Text
+  supervisorNotes String?          @db.Text
+  finalFeedback   String?          @db.Text
+  rating          Int?             // 1-5 rating
+  
+  quest           Quest            @relation(fields: [questId], references: [id], onDelete: Cascade)
+  volunteer       VolunteerProfile @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  evidenceRecords VolunteerEvidence[]
+  
+  @@unique([questId, volunteerId])
+  @@map("quest_assignments")
+}
+
+// Evidence submission and verification system
+model VolunteerEvidence {
+  id              String           @id @default(cuid())
+  assignmentId    String
+  volunteerId     String
+  questId         String
+  
+  // Evidence details
+  type            EvidenceType
+  title           String
+  description     String?          @db.Text
+  fileUrls        String[]         // Multiple files supported
+  metadata        Json?            // OCR results, timestamps, etc.
+  
+  // Verification
+  status          EvidenceStatus   @default(PENDING)
+  submittedAt     DateTime         @default(now())
+  reviewedAt      DateTime?
+  reviewerId      String?
+  reviewNotes     String?          @db.Text
+  
+  // Hours and points
+  hoursSubmitted  Float
+  hoursApproved   Float            @default(0)
+  pointsAwarded   Int              @default(0)
+  
+  // Auto-verification
+  autoVerified    Boolean          @default(false)
+  verificationScore Float?         // Confidence score for auto-verification
+  
+  assignment      QuestAssignment  @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  volunteer       VolunteerProfile @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  quest           Quest            @relation(fields: [questId], references: [id], onDelete: Cascade)
+  reviewer        User?            @relation(fields: [reviewerId], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([status, submittedAt])
+  @@index([volunteerId, status])
+  @@map("volunteer_evidence")
+}
+
+// Point transaction history
+model VolunteerPoints {
+  id              String           @id @default(cuid())
+  volunteerId     String
+  
+  // Transaction details
+  type            PointTransactionType
+  amount          Int              // Positive for earning, negative for spending
+  reason          String
+  description     String?
+  referenceId     String?          // Quest ID, reward ID, etc.
+  referenceType   String?          // "quest", "reward", "bonus", etc.
+  
+  // Balance tracking
+  balanceAfter    Int
+  
+  // Metadata
+  metadata        Json?
+  issuedById      String?
+  
+  volunteer       VolunteerProfile @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  issuedBy        User?            @relation(fields: [issuedById], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  
+  @@index([volunteerId, createdAt])
+  @@map("volunteer_points")
+}
+
+// Reward system
+model VolunteerReward {
+  id              String           @id @default(cuid())
+  name            String
+  description     String           @db.Text
+  type            RewardType
+  category        RewardCategory   @default(DIGITAL)
+  
+  // Cost and availability
+  pointsCost      Int
+  levelRequired   VolunteerLevel   @default(BRONZE)
+  maxRedemptions  Int?             // Null = unlimited
+  currentRedemptions Int           @default(0)
+  
+  // Reward details
+  value           String?          // "$25", "Certificate", etc.
+  imageUrl        String?
+  terms           String?          @db.Text
+  
+  // Availability
+  isActive        Boolean          @default(true)
+  validFrom       DateTime         @default(now())
+  validUntil      DateTime?
+  
+  redemptions     VolunteerRedemption[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@map("volunteer_rewards")
+}
+
+// Reward redemption tracking
+model VolunteerRedemption {
+  id              String           @id @default(cuid())
+  volunteerId     String
+  rewardId        String
+  
+  // Redemption details
+  pointsUsed      Int
+  status          RedemptionStatus @default(PENDING)
+  
+  // Fulfillment
+  fulfilledAt     DateTime?
+  fulfilledById   String?
+  fulfillmentNotes String?         @db.Text
+  trackingInfo    String?          // Tracking number, download link, etc.
+  
+  // Digital delivery
+  deliveryMethod  String?          // "email", "download", "physical"
+  recipientEmail  String?
+  shippingAddress Json?
+  
+  volunteer       VolunteerProfile @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  reward          VolunteerReward  @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  fulfilledBy     User?            @relation(fields: [fulfilledById], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@map("volunteer_redemptions")
+}
+
+// Mentor-mentee relationships
+model MentorRelation {
+  id              String           @id @default(cuid())
+  mentorId        String
+  menteeId        String
+  
+  // Relationship details
+  status          MentorshipStatus @default(ACTIVE)
+  startDate       DateTime         @default(now())
+  endDate         DateTime?
+  
+  // Goals and progress
+  goals           String[]
+  progress        Json?            // Goal progress tracking
+  meetingSchedule String?          // "weekly", "biweekly", etc.
+  lastMeeting     DateTime?
+  nextMeeting     DateTime?
+  
+  // Feedback and notes
+  mentorNotes     String?          @db.Text
+  menteeNotes     String?          @db.Text
+  adminNotes      String?          @db.Text
+  
+  mentor          VolunteerProfile @relation("MentorRelations", fields: [mentorId], references: [id], onDelete: Cascade)
+  mentee          VolunteerProfile @relation("MenteeRelations", fields: [menteeId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([mentorId, menteeId])
+  @@map("mentor_relations")
+}
+
+// Matching algorithm support
+model VolunteerMatch {
+  id              String           @id @default(cuid())
+  volunteerId     String
+  questId         String
+  
+  // Matching scores
+  overallScore    Float            // 0-100
+  languageScore   Float            @default(0)
+  skillScore      Float            @default(0)
+  availabilityScore Float          @default(0)
+  experienceScore Float            @default(0)
+  locationScore   Float            @default(0)
+  
+  // Matching metadata
+  reasons         String[]         // Why this match was made
+  concerns        String[]         // Potential issues
+  confidence      Float            @default(0) // 0-1
+  
+  // Selection tracking
+  isRecommended   Boolean          @default(false)
+  wasSelected     Boolean          @default(false)
+  selectionReason String?
+  
+  volunteer       VolunteerProfile @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  quest           Quest            @relation(fields: [questId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([volunteerId, questId])
+  @@index([questId, overallScore])
+  @@map("volunteer_matches")
+}
+
+// Quest reviews and feedback
+model QuestReview {
+  id              String           @id @default(cuid())
+  questId         String
+  reviewerId      String
+  reviewerRole    UserRole
+  
+  // Review content
+  rating          Int              // 1-5 stars
+  title           String?
+  content         String           @db.Text
+  
+  // Categories
+  difficultyRating Int?            // Was difficulty accurate?
+  clarityRating   Int?             // Was description clear?
+  supportRating   Int?             // Was support adequate?
+  
+  // Recommendation
+  wouldRecommend  Boolean          @default(true)
+  improvementSuggestions String?   @db.Text
+  
+  quest           Quest            @relation(fields: [questId], references: [id], onDelete: Cascade)
+  reviewer        User             @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now())
+  
+  @@map("quest_reviews")
+}
+
+// ==========================================
+// ENUMS FOR VOLUNTEER SYSTEM
+// ==========================================
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum VolunteerLevel {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
+enum MentorLevel {
+  JUNIOR_MENTOR
+  SENIOR_MENTOR
+  LEAD_MENTOR
+  MASTER_MENTOR
+}
+
+enum QuestCategory {
+  EDUCATION
+  TRANSLATION
+  CONTENT_CREATION
+  COMMUNITY
+  TECHNICAL
+  ADMINISTRATIVE
+  SPECIAL_EVENTS
+}
+
+enum QuestStatus {
+  DRAFT
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  PAUSED
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum UrgencyLevel {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  STARTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+enum EvidenceType {
+  TIME_LOG
+  PHOTO
+  VIDEO
+  DOCUMENT
+  LINK
+  SCREENSHOT
+  RECORDING
+  OTHER
+}
+
+enum EvidenceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_REVISION
+}
+
+enum PointTransactionType {
+  EARNED_QUEST
+  EARNED_BONUS
+  EARNED_REFERRAL
+  SPENT_REWARD
+  PENALTY
+  ADJUSTMENT
+  REFUND
+}
+
+enum RewardType {
+  DIGITAL_GOOD
+  PHYSICAL_GOOD
+  EXPERIENCE
+  RECOGNITION
+  ACCESS_PRIVILEGE
+  DONATION
+  CREDIT
+}
+
+enum RewardCategory {
+  DIGITAL
+  PHYSICAL
+  EXPERIENCE
+  EDUCATION
+  RECOGNITION
+}
+
+enum RedemptionStatus {
+  PENDING
+  PROCESSING
+  FULFILLED
+  CANCELLED
+  FAILED
+}
+
+enum MentorshipStatus {
+  REQUESTED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+// ==========================================
+// COPPA COMPLIANCE ENUMS
+// ==========================================
+
+enum AgeVerificationStatus {
+  PENDING
+  VERIFIED_ADULT
+  VERIFIED_MINOR
+  FAILED
+}
+
+enum ParentalConsentStatus {
+  NOT_REQUIRED
+  PENDING
+  GRANTED
+  DENIED
+  EXPIRED
+}
+
+// ==========================================
+// GDPR ARTICLE 17 - RIGHT TO DELETION
+// ==========================================
+
+// User deletion requests tracking
+model UserDeletionRequest {
+  id                        String           @id @default(cuid())
+  userId                    String           @unique
+  status                    DeletionStatus   @default(PENDING)
+  deletionReason            String?          @db.Text
+  
+  // COPPA compliance for minors
+  parentalConsentRequired   Boolean          @default(false)
+  parentalConsentVerified   Boolean          @default(false)
+  parentConfirmationToken   String?          @unique
+  parentConfirmationSentAt  DateTime?
+  parentConfirmationExpiry  DateTime?
+  
+  // Soft delete timing
+  softDeletedAt             DateTime?
+  hardDeletedAt             DateTime?
+  recoveryDeadline          DateTime?
+  
+  // Request metadata
+  requestSource             String           @default("self_service") // "self_service", "parental", "admin"
+  ipAddress                 String?
+  userAgent                 String?
+  additionalContext         Json?
+  
+  // Processing status
+  reviewRequired            Boolean          @default(false)
+  reviewedBy                String?
+  reviewedAt                DateTime?
+  reviewNotes               String?          @db.Text
+  
+  // Final confirmation
+  finalConfirmationToken    String?          @unique
+  finalConfirmationSentAt   DateTime?
+  finalConfirmationExpiry   DateTime?
+  
+  user                      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auditLogs                 DeletionAuditLog[]
+  
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
+  
+  @@index([status])
+  @@index([softDeletedAt])
+  @@index([recoveryDeadline])
+  @@map("user_deletion_requests")
+}
+
+enum DeletionStatus {
+  PENDING                    // Initial request received
+  PARENTAL_CONSENT_REQUIRED  // Waiting for parental consent (COPPA)
+  PARENTAL_CONSENT_PENDING   // Parental consent email sent
+  REVIEW_REQUIRED           // Manual review needed
+  CONFIRMED                 // Ready for soft delete
+  SOFT_DELETED              // Account soft deleted, in recovery period
+  HARD_DELETED              // Permanently deleted
+  CANCELLED                 // Request cancelled by user
+  RECOVERED                 // Account recovered during soft delete period
+  FAILED                    // Deletion failed due to error
+}
+
+// Comprehensive audit logging for deletion operations
+model DeletionAuditLog {
+  id                        String           @id @default(cuid())
+  deletionRequestId         String
+  
+  // Action details
+  action                    DeletionAction
+  performedBy               String?          // User ID who performed action
+  performedByRole           UserRole?
+  performedByType           ActorType        @default(SYSTEM)
+  
+  // Data affected
+  tableName                 String?
+  recordId                  String?
+  recordCount               Int?
+  
+  // Action details
+  previousStatus            DeletionStatus?
+  newStatus                 DeletionStatus?
+  actionDetails             String?          @db.Text
+  metadata                  Json?
+  
+  // Technical details
+  ipAddress                 String?
+  userAgent                 String?
+  sessionId                 String?
+  
+  // Data processing
+  dataAnonymized            Boolean          @default(false)
+  anonymizedFields          String[]
+  dataBackedUp              Boolean          @default(false)
+  backupLocation            String?
+  
+  deletionRequest           UserDeletionRequest @relation(fields: [deletionRequestId], references: [id], onDelete: Cascade)
+  
+  createdAt                 DateTime         @default(now())
+  
+  @@index([deletionRequestId])
+  @@index([action])
+  @@index([tableName, recordId])
+  @@map("deletion_audit_logs")
+}
+
+enum DeletionAction {
+  REQUEST_CREATED
+  PARENTAL_CONSENT_SENT
+  PARENTAL_CONSENT_GRANTED
+  PARENTAL_CONSENT_DENIED
+  REVIEW_ASSIGNED
+  REVIEW_APPROVED
+  REVIEW_REJECTED
+  FINAL_CONFIRMATION_SENT
+  FINAL_CONFIRMATION_RECEIVED
+  SOFT_DELETE_EXECUTED
+  HARD_DELETE_EXECUTED
+  DATA_ANONYMIZED
+  DATA_BACKED_UP
+  ACCOUNT_RECOVERED
+  REQUEST_CANCELLED
+  SYSTEM_ERROR
+  CLEANUP_COMPLETED
+}
+
+enum ActorType {
+  USER
+  PARENT
+  ADMIN
+  SYSTEM
+  AUTOMATED
+}
+
+// Anonymization tracking for retained data
+model AnonymizationLog {
+  id                        String           @id @default(cuid())
+  tableName                 String
+  recordId                  String
+  
+  // Anonymization details
+  anonymizedFields          Json             // {"email": "user_123@anonymized.local", "name": "[ANONYMIZED]"}
+  retainedFields            Json?            // Fields kept for legitimate interest
+  anonymizationMethod       String           // "hash", "pseudonym", "removal", "generalization"
+  
+  // Legal basis for retention
+  retentionReason           String?          @db.Text
+  retentionPeriod           String?          // "7_years", "indefinite", etc.
+  legalBasis                String?          // "legitimate_interest", "legal_obligation", etc.
+  
+  // Processing metadata
+  processedBy               String?          // User/system that performed anonymization
+  processingJobId           String?
+  
+  // Verification
+  verificationHash          String?          // Hash to verify data integrity
+  reversible                Boolean          @default(false)
+  
+  createdAt                 DateTime         @default(now())
+  
+  @@unique([tableName, recordId])
+  @@index([tableName])
+  @@index([createdAt])
+  @@map("anonymization_logs")
+}
+
+// ==========================================
+// 1001 STORIES ENHANCED MODELS
+// ==========================================
+
+// Enhanced Book model for PDF-based digital books
+model Book {
+  id              String           @id @default(cuid())
+  title           String
+  subtitle        String?
+  summary         String?          @db.Text
+  
+  // Author information
+  authorName      String
+  authorAlias     String?          // For privacy/anonymity
+  authorAge       Int?
+  authorLocation  String?
+  coAuthors       String[]
+  
+  // Publication details
+  language        String           @default("en")
+  ageRange        String?          // "5-8", "9-12", etc.
+  readingLevel    String?
+  category        String[]
+  genres          String[]
+  subjects        String[]
+  tags            String[]
+  
+  // PDF and media
+  coverImage      String?
+  pdfKey          String?          // Storage key for main PDF file
+  pdfFrontCover   String?          // Storage key for front cover PDF
+  pdfBackCover    String?          // Storage key for back cover PDF
+  pageLayout      String           @default("single")  // "single" or "double" for spread view
+  pageCount       Int?
+  previewPages    Int              @default(10)  // Number of pages available for preview
+  
+  // DRM and access control
+  drm             Json?            // {"watermark":true,"downloadAllowed":false,"printAllowed":false}
+  downloadAllowed Boolean          @default(false)
+  printAllowed    Boolean          @default(false)
+  
+  // Publishing status
+  isPublished     Boolean          @default(false)
+  publishedAt     DateTime?
+  featured        Boolean          @default(false)
+  
+  // Pricing and access
+  isPremium       Boolean          @default(false)
+  price           Decimal?         @db.Decimal(10, 2)
+  currency        String           @default("USD")
+  
+  // Visibility and permissions
+  visibility      BookVisibility   @default(PUBLIC)
+  
+  // Metrics
+  viewCount       Int              @default(0)
+  downloadCount   Int              @default(0)
+  rating          Float?
+  
+  // Relations
+  entitlements    Entitlement[]
+  publications    Publication[]
+  shopProducts    ShopProduct[]
+  reviews         Review[]         @relation("BookReviews")
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([isPublished])
+  @@index([isPremium])
+  @@index([language])
+  @@index([visibility])
+  @@map("books")
+}
+
+// Volunteer PDF submission system (No WYSIWYG editor)
+model VolunteerSubmission {
+  id            String           @id @default(cuid())
+  volunteerId   String
+  projectId     String?
+  
+  // Submission type and content
+  type          VolunteerSubmissionType   @default(PDF_UPLOAD)
+  pdfRef        String?          // Storage key for uploaded PDF
+  originalName  String?          // Original filename
+  fileSize      Int?             // File size in bytes
+  
+  // Content metadata
+  title         String
+  authorAlias   String           // Author's chosen name/pseudonym
+  language      String           @default("en")
+  ageRange      String?
+  category      String[]
+  tags          String[]
+  summary       String           @db.Text
+  
+  // Visibility and access
+  visibility    ContentVisibility @default(PUBLIC)
+  targetAudience String?         // Who this content is for
+  
+  // Copyright and permissions
+  copyrightConfirmed Boolean     @default(false)
+  portraitRightsConfirmed Boolean @default(false)
+  originalWork  Boolean          @default(true)
+  licenseType   String?          // "CC-BY", "CC-BY-SA", etc.
+  
+  // Review and approval workflow
+  status        VolunteerSubmissionStatus @default(SUBMITTED)
+  priority      Priority         @default(MEDIUM)
+  reviewerId    String?
+  assigneeId    String?
+  dueDate       DateTime?
+  reviewNotes   String?          @db.Text
+  rejectionReason String?        @db.Text
+  
+  // Publishing information
+  publishDate   DateTime?
+  compensation  Decimal?         @db.Decimal(10, 2)
+  
+  // Relations
+  volunteer     User             @relation("VolunteerSubmissions", fields: [volunteerId], references: [id], onDelete: Cascade)
+  reviewer      User?            @relation("ReviewedVolunteerSubmissions", fields: [reviewerId], references: [id])
+  assignee      User?            @relation("AssignedVolunteerSubmissions", fields: [assigneeId], references: [id])
+  publications  Publication[]
+  
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  
+  @@index([status])
+  @@index([volunteerId])
+  @@index([reviewerId])
+  @@index([priority])
+  @@map("volunteer_submissions")
+}
+
+// User entitlements for accessing premium content
+model Entitlement {
+  id              String           @id @default(cuid())
+  userId          String?          // Null for guest purchases
+  email           String?          // For guest purchase tracking
+  bookId          String?          // For individual book access
+  storyId         String?          // For legacy Story compatibility
+  
+  // Purchase/grant details
+  orderId         String?          // Connected to purchase
+  subscriptionId  String?          // Connected to subscription
+  licenseId       String?          // Connected to classroom license
+  grantReason     String?          // "purchase", "subscription", "license", "promotional"
+  
+  // Entitlement type and scope
+  type            EntitlementType  @default(PURCHASE)
+  scope           EntitlementScope @default(BOOK)
+  
+  // Validity and timing
+  grantedAt       DateTime         @default(now())
+  expiresAt       DateTime?        // Null = permanent
+  isActive        Boolean          @default(true)
+  activatedAt     DateTime?        // When first accessed
+  
+  // Usage tracking
+  lastAccessedAt  DateTime?
+  accessCount     Int              @default(0)
+  downloadCount   Int              @default(0)
+  
+  // Restrictions
+  maxDownloads    Int?             // Download limit
+  ipRestrictions  String[]         // Allowed IP ranges
+  
+  // Relations
+  user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book            Book?            @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  story           Story?           @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  order           Order?           @relation(fields: [orderId], references: [id])
+  subscription    Subscription?    @relation(fields: [subscriptionId], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([userId])
+  @@index([email])
+  @@index([bookId])
+  @@index([isActive])
+  @@index([expiresAt])
+  @@map("entitlements")
+}
+
+// Publication management (Approval → Library)
+model Publication {
+  id           String           @id @default(cuid())
+  bookId       String?
+  storyId      String?          // Legacy support
+  submissionId String?          // Source submission
+  
+  // Publication settings
+  visibility   ContentVisibility @default(PUBLIC)
+  isPremium    Boolean          @default(false)
+  unlockPolicy UnlockPolicy     @default(PURCHASE)
+  price        Decimal?         @db.Decimal(10, 2)
+  currency     String           @default("USD")
+  
+  // Version control
+  version      Int              @default(1)
+  changelog    String?          @db.Text
+  
+  // Publishing workflow
+  status       PublicationStatus @default(DRAFT)
+  publishedAt  DateTime?
+  publishedBy  String           // Admin user ID
+  
+  // Content organization
+  featured     Boolean          @default(false)
+  category     String[]
+  tags         String[]
+  sortOrder    Int              @default(0)
+  
+  // Relations
+  book         Book?            @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  story        Story?           @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  submission   VolunteerSubmission? @relation(fields: [submissionId], references: [id])
+  publisher    User             @relation("PublishedContent", fields: [publishedBy], references: [id])
+  
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  
+  @@index([status])
+  @@index([publishedAt])
+  @@index([featured])
+  @@index([isPremium])
+  @@map("publications")
+}
+
+// Enhanced Product model for Shop system
+model ShopProduct {
+  id              String           @id @default(cuid())
+  sku             String           @unique
+  type            ShopProductType  @default(DIGITAL_BOOK)
+  
+  // Basic information
+  title           String
+  description     String           @db.Text
+  shortDescription String?
+  
+  // Pricing
+  price           Decimal          @db.Decimal(10, 2)
+  compareAtPrice  Decimal?         @db.Decimal(10, 2)
+  currency        String           @default("USD")
+  
+  // Digital product specifics
+  bookId          String?          // Connected book
+  storyId         String?          // Legacy story support
+  downloadLimit   Int?             // Max downloads per purchase
+  accessDuration  Int?             // Days of access (null = permanent)
+  
+  // Bundle support
+  bundleItems     String[]         // IDs of bundled products
+  bundleDiscount  Decimal?         @db.Decimal(5, 2) // Percentage discount
+  
+  // Categorization and discovery
+  category        String[]
+  tags            String[]
+  featured        Boolean          @default(false)
+  
+  // Media and presentation
+  images          String[]
+  thumbnailUrl    String?
+  demoUrl         String?          // Preview/demo link
+  
+  // Creator attribution
+  creatorName     String?
+  creatorAge      Int?
+  creatorLocation String?
+  creatorStory    String?          @db.Text
+  
+  // Impact metrics
+  impactMetric    String?          // "Children reached", "Stories published"
+  impactValue     String?          // "500+", "50 communities"
+  
+  // Availability
+  status          ShopProductStatus @default(ACTIVE)
+  availableFrom   DateTime?
+  availableUntil  DateTime?
+  maxQuantity     Int?             // Purchase limit per user
+  
+  // SEO and marketing
+  metaTitle       String?
+  metaDescription String?
+  marketingTags   String[]
+  
+  // Relations
+  book            Book?            @relation(fields: [bookId], references: [id])
+  story           Story?           @relation(fields: [storyId], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([status])
+  @@index([type])
+  @@index([featured])
+  @@index([bookId])
+  @@map("shop_products")
+}
+
+// ==========================================
+// ENHANCED ENUMS
+// ==========================================
+
+enum BookVisibility {
+  PUBLIC
+  RESTRICTED
+  CLASSROOM
+  PRIVATE
+}
+
+enum VolunteerSubmissionType {
+  PDF_UPLOAD
+  TEXT_ASSISTANCE     // Optional text-based helper (no editor)
+  TRANSLATION
+  ILLUSTRATION
+}
+
+enum ContentVisibility {
+  PUBLIC
+  RESTRICTED
+  CLASSROOM
+  PRIVATE
+}
+
+enum VolunteerSubmissionStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  NEEDS_CHANGES
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
+enum EntitlementType {
+  PURCHASE
+  SUBSCRIPTION
+  LICENSE
+  PROMOTIONAL
+  FREE_ACCESS
+  TRIAL
+}
+
+enum EntitlementScope {
+  BOOK
+  CATEGORY
+  UNLIMITED
+  BUNDLE
+}
+
+enum PublicationStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+  WITHDRAWN
+}
+
+enum UnlockPolicy {
+  FREE
+  PURCHASE
+  SUBSCRIPTION
+  CLASSROOM_LICENSE
+  INSTITUTIONAL
+}
+
+enum ShopProductType {
+  DIGITAL_BOOK
+  BOOK_BUNDLE
+  SUBSCRIPTION
+  CLASSROOM_LICENSE
+  DONATION_ITEM
+  MERCHANDISE
+}
+
+enum ShopProductStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+  OUT_OF_STOCK
+}

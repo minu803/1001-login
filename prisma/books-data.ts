@@ -1,0 +1,1080 @@
+// Auto-generated book seed data
+import { BookMetadata } from '../scripts/create-book-data';
+
+export const booksData: BookMetadata[] = [
+  {
+    "id": "neema-01",
+    "title": "Neema Part 1",
+    "subtitle": "A Journey of Hope",
+    "summary": "A powerful story of hope and resilience following a young girl's journey through challenges and triumph.",
+    "authorName": "Emma Grace",
+    "authorAlias": "Young Storyteller",
+    "authorAge": 12,
+    "authorLocation": "Uganda",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Drama",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction",
+      "Drama"
+    ],
+    "subjects": [
+      "Hope",
+      "Resilience",
+      "Family"
+    ],
+    "tags": [
+      "neema",
+      "hope",
+      "family",
+      "uganda"
+    ],
+    "isPremium": false,
+    "pageCount": 24,
+    "mainPdfFile": "01_Neema part one_Edit_0716.pdf",
+    "frontCoverFile": "Neema 01 _ Front.pdf",
+    "backCoverFile": null,
+    "originalFolder": "01_ Neema_01"
+  },
+  {
+    "id": "neema-02",
+    "title": "Neema Part 2",
+    "subtitle": "A Journey of Hope",
+    "summary": "A powerful story of hope and resilience following a young girl's journey through challenges and triumph.",
+    "authorName": "Emma Grace",
+    "authorAlias": "Young Storyteller",
+    "authorAge": 12,
+    "authorLocation": "Uganda",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Drama",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction",
+      "Drama"
+    ],
+    "subjects": [
+      "Hope",
+      "Resilience",
+      "Family"
+    ],
+    "tags": [
+      "neema",
+      "hope",
+      "family",
+      "uganda"
+    ],
+    "isPremium": false,
+    "pageCount": 24,
+    "mainPdfFile": "02_ Neema_part two_Edit_0716.pdf",
+    "frontCoverFile": "Neema 02 _ Front.pdf",
+    "backCoverFile": "Neema 02 _ back.pdf",
+    "originalFolder": "02_ Neema_02"
+  },
+  {
+    "id": "neema-03",
+    "title": "Neema Part 3",
+    "subtitle": "A Journey of Hope",
+    "summary": "A powerful story of hope and resilience following a young girl's journey through challenges and triumph.",
+    "authorName": "Emma Grace",
+    "authorAlias": "Young Storyteller",
+    "authorAge": 12,
+    "authorLocation": "Uganda",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Drama",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction",
+      "Drama"
+    ],
+    "subjects": [
+      "Hope",
+      "Resilience",
+      "Family"
+    ],
+    "tags": [
+      "neema",
+      "hope",
+      "family",
+      "uganda"
+    ],
+    "isPremium": false,
+    "pageCount": 24,
+    "mainPdfFile": "03_ Neema_part three_Edit_0717.pdf",
+    "frontCoverFile": "Neema 03 _ Front_B.pdf",
+    "backCoverFile": "Neema 03 _ back.pdf",
+    "originalFolder": "03_ Neema_03"
+  },
+  {
+    "id": "second-chance",
+    "title": "The Second Chance",
+    "subtitle": "A Story of Redemption",
+    "summary": "An inspiring story about redemption and the opportunity to start anew.",
+    "authorName": "David Hope",
+    "authorAlias": "Hope Writer",
+    "authorAge": 14,
+    "authorLocation": "Kenya",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Drama",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction",
+      "Drama"
+    ],
+    "subjects": [
+      "Redemption",
+      "Second chances",
+      "Growth"
+    ],
+    "tags": [
+      "second-chance",
+      "redemption",
+      "hope"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "The second chance inside _.pdf",
+    "frontCoverFile": "The second chance_ Front.pdf",
+    "backCoverFile": "The second chance_ back.pdf",
+    "originalFolder": "04_ Second chance"
+  },
+  {
+    "id": "angel-prayer",
+    "title": "Angel's Prayer",
+    "subtitle": "Faith and Hope",
+    "summary": "A touching story about faith, hope, and the power of prayer in difficult times.",
+    "authorName": "Grace Angel",
+    "authorAlias": "Little Angel",
+    "authorAge": 10,
+    "authorLocation": "Ethiopia",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Spiritual",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction",
+      "Spiritual"
+    ],
+    "subjects": [
+      "Faith",
+      "Prayer",
+      "Hope"
+    ],
+    "tags": [
+      "angel",
+      "prayer",
+      "faith",
+      "spiritual"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "Angel prayer _inside.pdf",
+    "frontCoverFile": "Angel s  Prayer _ front.pdf",
+    "backCoverFile": "Angel s  Prayer _ back.pdf",
+    "originalFolder": "05_ Angel prayer"
+  },
+  {
+    "id": "martha-01",
+    "title": "Martha Part 1",
+    "subtitle": "The Helper's Heart",
+    "summary": "The heartwarming tale of a young girl who discovers the joy of helping others in her community.",
+    "authorName": "Sarah Helper",
+    "authorAlias": "Caring Writer",
+    "authorAge": 13,
+    "authorLocation": "Tanzania",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Family",
+      "Community"
+    ],
+    "genres": [
+      "Fiction",
+      "Family"
+    ],
+    "subjects": [
+      "Helping others",
+      "Community",
+      "Kindness"
+    ],
+    "tags": [
+      "martha",
+      "helper",
+      "kindness",
+      "community"
+    ],
+    "isPremium": true,
+    "pageCount": 22,
+    "mainPdfFile": "Martha _01_ inside_Edit_0718.pdf",
+    "frontCoverFile": "MARTHA _ front.pdf",
+    "backCoverFile": "MARTHA _ back.pdf",
+    "originalFolder": "06_ Martha_01"
+  },
+  {
+    "id": "martha-02",
+    "title": "Martha Part 2",
+    "subtitle": "The Helper's Heart",
+    "summary": "The heartwarming tale of a young girl who discovers the joy of helping others in her community.",
+    "authorName": "Sarah Helper",
+    "authorAlias": "Caring Writer",
+    "authorAge": 13,
+    "authorLocation": "Tanzania",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Family",
+      "Community"
+    ],
+    "genres": [
+      "Fiction",
+      "Family"
+    ],
+    "subjects": [
+      "Helping others",
+      "Community",
+      "Kindness"
+    ],
+    "tags": [
+      "martha",
+      "helper",
+      "kindness",
+      "community"
+    ],
+    "isPremium": true,
+    "pageCount": 22,
+    "mainPdfFile": "Martha_02_ inside _Edit_0718.pdf",
+    "frontCoverFile": "THE MARTHA STORY _02_ front.pdf",
+    "backCoverFile": "THE MARTHA STORY _02_ back.pdf",
+    "originalFolder": "07_ Martha_02"
+  },
+  {
+    "id": "martha-03",
+    "title": "Martha Part 3",
+    "subtitle": "The Helper's Heart",
+    "summary": "The heartwarming tale of a young girl who discovers the joy of helping others in her community.",
+    "authorName": "Sarah Helper",
+    "authorAlias": "Caring Writer",
+    "authorAge": 13,
+    "authorLocation": "Tanzania",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Family",
+      "Community"
+    ],
+    "genres": [
+      "Fiction",
+      "Family"
+    ],
+    "subjects": [
+      "Helping others",
+      "Community",
+      "Kindness"
+    ],
+    "tags": [
+      "martha",
+      "helper",
+      "kindness",
+      "community"
+    ],
+    "isPremium": true,
+    "pageCount": 22,
+    "mainPdfFile": "Martha _03- inside_Edit_0718.pdf",
+    "frontCoverFile": "MARTHA STORY _03_ front.pdf",
+    "backCoverFile": "MARTHA STORY _03_ back.pdf",
+    "originalFolder": "08_ Martha_03"
+  },
+  {
+    "id": "never-give-up",
+    "title": "Never Give Up",
+    "subtitle": "The Power of Perseverance",
+    "summary": "A motivational tale about perseverance and the strength to overcome obstacles.",
+    "authorName": "Victory Strong",
+    "authorAlias": "Determined Writer",
+    "authorAge": 11,
+    "authorLocation": "Rwanda",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Motivation",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction",
+      "Motivational"
+    ],
+    "subjects": [
+      "Perseverance",
+      "Determination",
+      "Success"
+    ],
+    "tags": [
+      "never-give-up",
+      "perseverance",
+      "determination"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "Never give up_ inside_.pdf",
+    "frontCoverFile": "never give up_  front.pdf",
+    "backCoverFile": "never give up_  back.pdf",
+    "originalFolder": "09_ Never give up"
+  },
+  {
+    "id": "appreciation",
+    "title": "Appreciation",
+    "summary": "An inspiring story about appreciation, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "appreciation"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "APPRECIATION_ inside_.pdf",
+    "frontCoverFile": "Appreciation_  front.pdf",
+    "backCoverFile": "Appreciation_  back.pdf",
+    "originalFolder": "10_ Appreciation"
+  },
+  {
+    "id": "the-eyes-of-the-sun",
+    "title": "The Eyes Of The Sun",
+    "summary": "An inspiring story about the eyes of the sun, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "the-eyes-of-the-sun"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "THE EYES OF THE SUN_ insdie .pdf",
+    "frontCoverFile": "the eyes of the sun_  front.pdf",
+    "backCoverFile": "the eyes of the sun_  back.pdf",
+    "originalFolder": "11_ The eyes of the sun"
+  },
+  {
+    "id": "who-is-real",
+    "title": "Who Is Real",
+    "summary": "An inspiring story about who is real, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "who-is-real"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "09_Who is real hero _ inside_ Edit_0717.pdf",
+    "frontCoverFile": "Who is real hero Front_B.pdf",
+    "backCoverFile": "Who is real hero_  back.pdf",
+    "originalFolder": "12_ Who is real"
+  },
+  {
+    "id": "kakama-01",
+    "title": "Kakama  01",
+    "summary": "An inspiring story about kakama  01, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "kakama-01"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "04_Kakam and rebels_Part one_Edit_0717.pdf",
+    "frontCoverFile": "Kakam and rebels_01_front_A.pdf",
+    "backCoverFile": null,
+    "originalFolder": "13 _ Kakama _01"
+  },
+  {
+    "id": "kakama-02",
+    "title": "Kakama 02",
+    "summary": "An inspiring story about kakama 02, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "kakama-02"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "05_Kakam and rebels_Part two_Edit.pdf",
+    "frontCoverFile": "Kakam and rebels_02_front_A.pdf",
+    "backCoverFile": "Kakama _02 _ back.pdf",
+    "originalFolder": "14 _ Kakama_02"
+  },
+  {
+    "id": "my-life-span",
+    "title": "My Life  Span",
+    "summary": "An inspiring story about my life  span, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "my-life-span"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "inside_Span.pdf",
+    "frontCoverFile": "front_Span.pdf",
+    "backCoverFile": "back _0404.pdf",
+    "originalFolder": "15_ My life _Span"
+  },
+  {
+    "id": "my-life-p-urh-pecha",
+    "title": "My Life  P'UrhéPecha",
+    "summary": "An inspiring story about my life  p'urhépecha, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "my-life-p-urh-pecha"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "inside_Pur.pdf",
+    "frontCoverFile": "front_Span_0407.pdf",
+    "backCoverFile": "back _0404.pdf",
+    "originalFolder": "16_ My Life_ P'urhépecha"
+  },
+  {
+    "id": "my-life-eng",
+    "title": "My Life Eng",
+    "summary": "An inspiring story about my life eng, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "my-life-eng"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "inside_Eng_02.pdf",
+    "frontCoverFile": "front_Eng_0407.pdf",
+    "backCoverFile": "back_0404.pdf",
+    "originalFolder": "17_ My life_Eng"
+  },
+  {
+    "id": "check-point-span",
+    "title": "Check Point  Span",
+    "summary": "An inspiring story about check point  span, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "check-point-span"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "Check point story_inside_Span_0404.pdf",
+    "frontCoverFile": "Checkpoint story_Front_Span_0406.pdf",
+    "backCoverFile": "check  point_back_0404.pdf",
+    "originalFolder": "18_ Check point_ Span"
+  },
+  {
+    "id": "check-point-eng",
+    "title": "Check Point  Eng",
+    "summary": "An inspiring story about check point  eng, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "check-point-eng"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "Check point story_inside_0207.pdf",
+    "frontCoverFile": "Checkpoint story_Front_A.pdf",
+    "backCoverFile": "check  point_back_0404.pdf",
+    "originalFolder": "19_ Check point_ Eng"
+  },
+  {
+    "id": "steet-boy-part01-span",
+    "title": "Steet Boy Part01 Span",
+    "summary": "An inspiring story about steet boy part01 span, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "steet-boy-part01-span"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "The street boy_Inside_ part 01_Span_0404.pdf",
+    "frontCoverFile": "The street boy _ Front_SP_0404.pdf",
+    "backCoverFile": "The street boy _ back_0404.pdf",
+    "originalFolder": "20_ Steet boy_part01_Span"
+  },
+  {
+    "id": "street-boy-part-02-span-folder",
+    "title": ". Street Boy Part 02 Span Folder",
+    "summary": "An inspiring story about . street boy part 02 span folder, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "street-boy-part-02-span-folder"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "The street boy_part 02_Span.pdf",
+    "frontCoverFile": null,
+    "backCoverFile": null,
+    "originalFolder": "21. Street boy_part 02_Span Folder"
+  },
+  {
+    "id": "street-boy-part02-eng",
+    "title": "Street Boy Part02 Eng",
+    "summary": "An inspiring story about street boy part02 eng, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "street-boy-part02-eng"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "The street boy_part 02_A_inside_ 0207.pdf",
+    "frontCoverFile": "The street boy _ part 02 _ Front_ A.pdf",
+    "backCoverFile": "The street boy _ part 2_ back _0404.pdf",
+    "originalFolder": "22_ Street boy_part02_Eng"
+  },
+  {
+    "id": "the-three-boys-eng",
+    "title": "The Three Boys  Eng",
+    "summary": "An inspiring story about the three boys  eng, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "the-three-boys-eng"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "Three boys inside.pdf",
+    "frontCoverFile": "Three boys Front_0208.pdf",
+    "backCoverFile": "Three boys back_0208.pdf",
+    "originalFolder": "23_ The three boys_ Eng"
+  },
+  {
+    "id": "the-story-of-a-thief-eng",
+    "title": "The Story Of A Thief  Eng",
+    "summary": "An inspiring story about the story of a thief  eng, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "the-story-of-a-thief-eng"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "The story of a thief _ inside_reduced.pdf",
+    "frontCoverFile": "The story of a thief _ Front _ A.pdf",
+    "backCoverFile": "thief back _ 0208.pdf",
+    "originalFolder": "24_ The story of a thief_ Eng"
+  },
+  {
+    "id": "the-three-boys-span",
+    "title": "The Three Boys  Span",
+    "summary": "An inspiring story about the three boys  span, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "the-three-boys-span"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "The Three Boys _Inside_ Span_0404.pdf",
+    "frontCoverFile": "Three boys Front_Span.pdf",
+    "backCoverFile": "boys _ back.pdf",
+    "originalFolder": "25_ The Three Boys_ Span"
+  },
+  {
+    "id": "the-indian-boy-s",
+    "title": "The Indian Boy'S",
+    "summary": "An inspiring story about the indian boy's, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "the-indian-boy-s"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "The indian boy's last petition_ inside.pdf",
+    "frontCoverFile": "The Indian boy's last petition_ Front_B.pdf",
+    "backCoverFile": "Indian boy _ Back_0208.pdf",
+    "originalFolder": "26_ The indian boy's"
+  },
+  {
+    "id": "fatuma",
+    "title": "Fatuma",
+    "summary": "An inspiring story about fatuma, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "fatuma"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "08_Fatuma story_inside_Edit_0717.pdf",
+    "frontCoverFile": "Fatuma Story_ Front_C.pdf",
+    "backCoverFile": "Fatuma_  Back_0208.pdf",
+    "originalFolder": "27_ Fatuma"
+  },
+  {
+    "id": "greedy-fisherman",
+    "title": "Greedy Fisherman",
+    "summary": "An inspiring story about greedy fisherman, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "greedy-fisherman"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "07_Greedy fisherman_inside_Edit_0717.pdf",
+    "frontCoverFile": "Greedy fisherman_Front_B.pdf",
+    "backCoverFile": "fisherman_  Back_0208.pdf",
+    "originalFolder": "28_ Greedy Fisherman"
+  },
+  {
+    "id": "street-boy-part-01-eng-folder",
+    "title": ". Street Boy Part 01 ENG Folder",
+    "summary": "An inspiring story about . street boy part 01 eng folder, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "street-boy-part-01-eng-folder"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "The street boy_part 01_ENG.pdf",
+    "frontCoverFile": null,
+    "backCoverFile": null,
+    "originalFolder": "29. Street boy_part 01_ENG Folder"
+  },
+  {
+    "id": "girl-with-a-hope-eng",
+    "title": "Girl With A Hope  Eng",
+    "summary": "An inspiring story about girl with a hope  eng, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "girl-with-a-hope-eng"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "Girl with a hope_inside_0408.pdf",
+    "frontCoverFile": "Girl with a hope _ Front_A_0208.pdf",
+    "backCoverFile": "Girl with a hope _ back_0404.pdf",
+    "originalFolder": "29_ Girl with a hope_ Eng"
+  },
+  {
+    "id": "mirror",
+    "title": "Mirror",
+    "summary": "An inspiring story about mirror, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "mirror"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "06_The mirror story_Edit_0717.pdf",
+    "frontCoverFile": "The mirror story_front_A.pdf",
+    "backCoverFile": "mirror_ Back_0208.pdf",
+    "originalFolder": "30_ Mirror"
+  },
+  {
+    "id": "a-gril-come-to-stanford",
+    "title": ". A Gril Come To Stanford",
+    "summary": "An inspiring story about . a gril come to stanford, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "a-gril-come-to-stanford"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "A girl come to stanford_ inside.pdf",
+    "frontCoverFile": "Goes to stanford_Front_B.pdf",
+    "backCoverFile": "stanford_ Back_0208.pdf",
+    "originalFolder": "31. A gril come to stanford"
+  },
+  {
+    "id": "the-indian-girl-helping-father",
+    "title": "The Indian Girl Helping Father",
+    "summary": "An inspiring story about the indian girl helping father, written by a young author to share hope and wisdom.",
+    "authorName": "Young Author",
+    "authorAlias": "Creative Writer",
+    "authorAge": 12,
+    "authorLocation": "Africa",
+    "language": "en",
+    "ageRange": "6-12",
+    "category": [
+      "Adventure",
+      "Inspiration"
+    ],
+    "genres": [
+      "Fiction"
+    ],
+    "subjects": [
+      "Adventure",
+      "Growth"
+    ],
+    "tags": [
+      "the-indian-girl-helping-father"
+    ],
+    "isPremium": true,
+    "pageCount": 20,
+    "mainPdfFile": "indian girl helping father _ inside.pdf",
+    "frontCoverFile": "The Indian girl helping father_ Front_A.pdf",
+    "backCoverFile": "Indian girl helping father _ Back_0208.pdf",
+    "originalFolder": "32_The indian girl helping father"
+  }
+];

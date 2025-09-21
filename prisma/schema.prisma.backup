@@ -1,0 +1,262 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - Core authentication
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  emailVerified   DateTime?
+  name            String?
+  image           String?
+  role            UserRole         @default(LEARNER)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  // Relations
+  accounts        Account[]
+  sessions        Session[]
+  profile         Profile?
+  subscription    Subscription?
+  stories         Story[]
+  enrollments     Enrollment[]
+  volunteering    VolunteerWork[]
+  
+  @@map("users")
+}
+
+// User roles
+enum UserRole {
+  LEARNER
+  TEACHER
+  INSTITUTION
+  VOLUNTEER
+  ADMIN
+}
+
+// User profile with extended information
+model Profile {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  firstName       String?
+  lastName        String?
+  organization    String?
+  bio             String?
+  location        String?
+  phone           String?
+  dateOfBirth     DateTime?
+  language        String           @default("en")
+  
+  // For teachers/institutions
+  teachingLevel   String?
+  subjects        String[]
+  studentCount    Int?
+  
+  // For volunteers
+  skills          String[]
+  availability    String?
+  experience      String?
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("profiles")
+}
+
+// NextAuth Account model (for OAuth providers)
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// NextAuth Session model
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+// NextAuth Verification Token model (for email verification)
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Subscription model for premium features
+model Subscription {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  plan            SubscriptionPlan @default(FREE)
+  status          SubscriptionStatus @default(ACTIVE)
+  
+  // Subscription details
+  startDate       DateTime         @default(now())
+  endDate         DateTime?
+  cancelledAt     DateTime?
+  
+  // Payment information
+  stripeCustomerId     String?     @unique
+  stripeSubscriptionId String?     @unique
+  stripePriceId        String?
+  
+  // Features
+  maxStudents          Int         @default(30)  // For teachers
+  maxDownloads         Int         @default(10)  // Monthly limit
+  canAccessPremium     Boolean     @default(false)
+  canDownloadPDF       Boolean     @default(false)
+  canCreateClasses     Boolean     @default(false)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("subscriptions")
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC      // $9.99/month
+  PREMIUM    // $19.99/month
+  ENTERPRISE // Custom pricing
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
+// Story model for published content
+model Story {
+  id              String           @id @default(cuid())
+  title           String
+  content         String           @db.Text
+  summary         String?
+  
+  authorId        String
+  authorName      String
+  authorAge       Int?
+  authorLocation  String?
+  
+  category        String[]
+  tags            String[]
+  language        String           @default("en")
+  
+  coverImage      String?
+  illustrations   String[]
+  
+  isPremium       Boolean          @default(false)
+  isPublished     Boolean          @default(false)
+  publishedAt     DateTime?
+  
+  viewCount       Int              @default(0)
+  likeCount       Int              @default(0)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  author          User             @relation(fields: [authorId], references: [id])
+  enrollments     Enrollment[]
+  
+  @@map("stories")
+}
+
+// Enrollment model (for tracking learner progress)
+model Enrollment {
+  id              String           @id @default(cuid())
+  userId          String
+  storyId         String
+  
+  progress        Int              @default(0) // Percentage
+  completed       Boolean          @default(false)
+  completedAt     DateTime?
+  
+  rating          Int?             // 1-5 stars
+  feedback        String?
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story           Story            @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, storyId])
+  @@map("enrollments")
+}
+
+// Volunteer work tracking
+model VolunteerWork {
+  id              String           @id @default(cuid())
+  userId          String
+  
+  type            VolunteerType
+  title           String
+  description     String?
+  
+  hoursContributed Float           @default(0)
+  storiesCreated   Int             @default(0)
+  translationsDone Int             @default(0)
+  
+  status          VolunteerStatus  @default(PENDING)
+  
+  startDate       DateTime         @default(now())
+  endDate         DateTime?
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  volunteer       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("volunteer_work")
+}
+
+enum VolunteerType {
+  TRANSLATION
+  ILLUSTRATION
+  TEACHING
+  CONTENT_CREATION
+  TECHNICAL
+  OTHER
+}
+
+enum VolunteerStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
