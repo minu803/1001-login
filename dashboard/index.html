@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - 1001 Stories</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="dashboard-sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🌐 1001 Stories</div>
+                <div class="user-profile" id="userProfile">
+                    <div class="user-avatar"></div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">Loading...</div>
+                        <div class="user-role" id="userRole">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav" id="sidebarNav">
+                <!-- Navigation will be populated based on user role -->
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn logout-btn" onclick="logout()">
+                    <span>🚪</span> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <header class="dashboard-header">
+                <h1 id="pageTitle">Dashboard</h1>
+                <div class="header-actions">
+                    <button class="btn notification-btn">
+                        <span>🔔</span>
+                        <span class="notification-count">3</span>
+                    </button>
+                    <button class="btn profile-btn" onclick="toggleProfileMenu()">
+                        <span>👤</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="dashboard-content" id="dashboardContent">
+                <!-- Content will be loaded based on user role and selected page -->
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>Loading your dashboard...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Include authentication -->
+    <script src="../api/auth/session.js"></script>
+    <script src="../api/mock-auth.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
