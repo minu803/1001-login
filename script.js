@@ -118,29 +118,6 @@ class AuthManager {
             this.handleSocialAuth('facebook', 'signup');
         });
 
-        // Twitter auth buttons
-        document.getElementById('twitterSignin')?.addEventListener('click', () => {
-            this.handleSocialAuth('twitter', 'signin');
-        });
-
-        // GitHub auth buttons
-        document.getElementById('githubSignin')?.addEventListener('click', () => {
-            this.handleSocialAuth('github', 'signin');
-        });
-        document.getElementById('githubSignup')?.addEventListener('click', () => {
-            this.handleSocialAuth('github', 'signup');
-        });
-
-        // Microsoft auth buttons
-        document.getElementById('microsoftSignin')?.addEventListener('click', () => {
-            this.handleSocialAuth('microsoft', 'signin');
-        });
-
-        // LinkedIn auth buttons
-        document.getElementById('linkedinSignin')?.addEventListener('click', () => {
-            this.handleSocialAuth('linkedin', 'signin');
-        });
-
         // Forgot password
         document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => {
             e.preventDefault();
